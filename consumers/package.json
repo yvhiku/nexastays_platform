@@ -1,0 +1,21 @@
+{
+  "name": "@nexa/consumers",
+  "version": "0.1.0",
+  "private": true,
+  "main": "dist/main.js",
+  "scripts": {
+    "build": "tsc -p tsconfig.json",
+    "start": "node dist/main.js",
+    "start:dev": "tsc -p tsconfig.json && node dist/main.js"
+  },
+  "dependencies": {
+    "@nexa/event-bus": "file:../event-bus",
+    "@nexa/identity-read-model": "file:../identity-read-model",
+    "@nexa/telemetry": "file:../telemetry",
+    "dotenv": "^17.3.1"
+  },
+  "devDependencies": {
+    "@types/node": "^22.10.7",
+    "typescript": "^5.7.3"
+  }
+}
