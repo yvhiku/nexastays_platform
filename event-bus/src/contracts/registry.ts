@@ -12,6 +12,9 @@ export const EVENTS = {
   PAYMENT_EXPIRED: 'payment.expired.v1',
   KYC_UPDATED: 'kyc.updated.v1',
   LISTING_PUBLISHED: 'listing.published.v1',
+  REVIEW_CREATED: 'review.created.v1',
+  REVIEW_UPDATED: 'review.updated.v1',
+  REVIEW_DELETED: 'review.deleted.v1',
 } as const satisfies Record<string, DomainEventType>;
 
 export type RegisteredEventName = (typeof EVENTS)[keyof typeof EVENTS];

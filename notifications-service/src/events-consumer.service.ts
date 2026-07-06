@@ -6,6 +6,7 @@ import {
   type BookingConfirmedPayload,
   type BookingCompletedPayload,
   type PaymentExpiredPayload,
+  type ReviewCreatedPayload,
   type DomainEvent,
 } from '@nexa/event-bus';
 import { NotificationDispatcherService } from './notification-dispatcher.service';
@@ -38,6 +39,7 @@ export class EventsConsumerService implements OnModuleInit, OnModuleDestroy {
         EVENTS.BOOKING_COMPLETED,
         EVENTS.PAYMENT_SUCCEEDED,
         EVENTS.PAYMENT_EXPIRED,
+        EVENTS.REVIEW_CREATED,
       ],
       (event) => this.handleDomainEvent(event),
     );
@@ -99,6 +101,31 @@ export class EventsConsumerService implements OnModuleInit, OnModuleDestroy {
         direction: 'warning',
         event: 'STAYS_PAYMENT_EXPIRED',
       });
+      return;
+    }
+
+    if (event.type === EVENTS.REVIEW_CREATED) {
+      const p = event.payload as unknown as ReviewCreatedPayload;
+      await Promise.all([
+        this.dispatcher.dispatch({
+          userId: p.guestUserId,
+          title: 'Thanks for your review',
+          body: 'Thanks for reviewing your stay.',
+          reference: p.reviewId,
+          amount: '',
+          direction: 'info',
+          event: 'STAYS_REVIEW_CREATED',
+        }),
+        this.dispatcher.dispatch({
+          userId: p.hostUserId,
+          title: 'New review',
+          body: 'You received a new review.',
+          reference: p.reviewId,
+          amount: '',
+          direction: 'incoming',
+          event: 'STAYS_REVIEW_CREATED',
+        }),
+      ]);
     }
   }
 }

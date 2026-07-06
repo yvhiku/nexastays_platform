@@ -10,6 +10,9 @@ export const DOMAIN_EVENT_TYPES = [
   'payment.expired.v1',
   'kyc.updated.v1',
   'listing.published.v1',
+  'review.created.v1',
+  'review.updated.v1',
+  'review.deleted.v1',
 ] as const;
 
 export type DomainEventType = (typeof DOMAIN_EVENT_TYPES)[number];
@@ -22,7 +25,10 @@ export type LegacyDomainEventType =
   | 'payment.succeeded'
   | 'payment.expired'
   | 'kyc.updated'
-  | 'listing.published';
+  | 'listing.published'
+  | 'review.created'
+  | 'review.updated'
+  | 'review.deleted';
 
 export interface DomainEvent<T extends Record<string, unknown> = Record<string, unknown>> {
   id: string;
@@ -80,6 +86,26 @@ export interface KycUpdatedPayload {
 export interface ListingPublishedPayload {
   listingId: string;
   hostUserId: string;
+}
+
+export interface ReviewCreatedPayload {
+  reviewId: string;
+  bookingId: string;
+  listingId: string;
+  hostUserId: string;
+  guestUserId: string;
+  rating: string;
+}
+
+export interface ReviewUpdatedPayload {
+  reviewId: string;
+  listingId: string;
+  guestUserId: string;
+}
+
+export interface ReviewDeletedPayload {
+  reviewId: string;
+  listingId: string;
 }
 
 export interface NotificationRequestedPayload {

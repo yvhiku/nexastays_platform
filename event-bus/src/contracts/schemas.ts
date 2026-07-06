@@ -67,4 +67,30 @@ export const EVENT_SCHEMAS: Record<DomainEventType, z.ZodType<Record<string, unk
       hostUserId: nonEmpty,
     })
     .passthrough(),
+
+  'review.created.v1': z
+    .object({
+      reviewId: nonEmpty,
+      bookingId: nonEmpty,
+      listingId: nonEmpty,
+      hostUserId: nonEmpty,
+      guestUserId: nonEmpty,
+      rating: nonEmpty,
+    })
+    .passthrough(),
+
+  'review.updated.v1': z
+    .object({
+      reviewId: nonEmpty,
+      listingId: nonEmpty,
+      guestUserId: nonEmpty,
+    })
+    .passthrough(),
+
+  'review.deleted.v1': z
+    .object({
+      reviewId: nonEmpty,
+      listingId: nonEmpty,
+    })
+    .passthrough(),
 };
