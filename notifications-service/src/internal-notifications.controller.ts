@@ -9,10 +9,10 @@ import {
 import type { DomainEvent } from '@nexa/event-bus';
 import { FcmPushService, type PushPayload } from './fcm-push.service';
 import { EventIngressService } from './events-consumer.service';
+import { getInternalServiceKey } from './secrets';
 
 function assertInternalKey(key: string | undefined): void {
-  const expected = process.env.INTERNAL_SERVICE_KEY ?? 'dev-internal-key';
-  if (key !== expected) {
+  if (key !== getInternalServiceKey()) {
     throw new UnauthorizedException('Invalid internal service key');
   }
 }

@@ -32,7 +32,15 @@ export class HttpFallbackEventPublisher implements EventBusPublisher {
             method: 'POST',
             headers: {
               'Content-Type': 'application/json',
-              'X-Internal-Key': process.env.INTERNAL_SERVICE_KEY ?? 'dev-internal-key',
+              'X-Internal-Key':
+                process.env.INTERNAL_SERVICE_KEY?.trim() ||
+                (process.env.NODE_ENV === 'production'
+                  ? (() => {
+                      throw new Error(
+                        'INTERNAL_SERVICE_KEY is required in production',
+                      );
+                    })()
+                  : 'dev-internal-key'),
             },
             body: JSON.stringify(event),
           });

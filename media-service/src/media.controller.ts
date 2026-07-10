@@ -15,10 +15,10 @@ import { FileInterceptor } from '@nestjs/platform-express';
 import { memoryStorage } from 'multer';
 import type { Response } from 'express';
 import { MediaService } from './media.service';
+import { getInternalServiceKey } from './secrets';
 
 function assertInternalKey(key: string | undefined): void {
-  const expected = process.env.INTERNAL_SERVICE_KEY ?? 'dev-internal-key';
-  if (key !== expected) {
+  if (key !== getInternalServiceKey()) {
     throw new UnauthorizedException('Invalid internal service key');
   }
 }
