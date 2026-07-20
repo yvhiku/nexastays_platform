@@ -1,4 +1,5 @@
 export * from './event-types';
+export * from './notification-types';
 export * from './event-bus.interface';
 export * from './redis-streams-event-bus';
 export * from './fallback-event-bus';

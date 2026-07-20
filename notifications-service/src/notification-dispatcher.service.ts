@@ -7,6 +7,7 @@ import type {
   NotificationChannelName,
   NotificationPayload,
 } from './channels/notification-channel.interface';
+import type { UserNotification } from './entities/user-notification.entity';
 
 /**
  * Multi-channel dispatcher.
@@ -20,6 +21,29 @@ export class NotificationDispatcherService {
 
   constructor(push: PushChannel, email: EmailChannel, sms: SmsChannel) {
     this.channels = [push, email, sms];
+  }
+
+  /** Push delivery for a persisted inbox row. */
+  async dispatchPush(row: UserNotification): Promise<void> {
+    const actionUrl =
+      typeof row.data?.action_url === 'string' ? row.data.action_url : '';
+    const bookingId =
+      typeof row.data?.booking_id === 'string' ? row.data.booking_id : row.id;
+    await this.dispatch(
+      {
+        userId: row.user_id,
+        notificationId: row.id,
+        type: row.type,
+        title: row.title,
+        body: row.body,
+        reference: bookingId,
+        amount: '',
+        direction: 'info',
+        event: row.type,
+        actionUrl,
+      },
+      ['push'],
+    );
   }
 
   async dispatch(

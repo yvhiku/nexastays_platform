@@ -26,10 +26,48 @@ export const EVENT_SCHEMAS: Record<DomainEventType, z.ZodType<Record<string, unk
   'payment.succeeded.v1': z
     .object({
       bookingId: nonEmpty,
+      guestUserId: nonEmpty,
       provider: nonEmpty,
       providerIntentId: nonEmpty,
       amount: nonEmpty,
       currency: nonEmpty,
+    })
+    .passthrough(),
+
+  'booking.cancelled.v1': z
+    .object({
+      bookingId: nonEmpty,
+      listingId: nonEmpty,
+      guestUserId: nonEmpty,
+      hostUserId: nonEmpty,
+      cancelledBy: z.enum(['guest', 'host']),
+    })
+    .passthrough(),
+
+  'booking.host_approved.v1': z
+    .object({
+      bookingId: nonEmpty,
+      listingId: nonEmpty,
+      guestUserId: nonEmpty,
+      hostUserId: nonEmpty,
+    })
+    .passthrough(),
+
+  'review.reminder.v1': z
+    .object({
+      bookingId: nonEmpty,
+      listingId: nonEmpty,
+      guestUserId: nonEmpty,
+    })
+    .passthrough(),
+
+  'review.reply.v1': z
+    .object({
+      reviewId: nonEmpty,
+      bookingId: nonEmpty,
+      listingId: nonEmpty,
+      recipientUserId: nonEmpty,
+      authorUserId: nonEmpty,
     })
     .passthrough(),
 

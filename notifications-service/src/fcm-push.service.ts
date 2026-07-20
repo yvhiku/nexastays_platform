@@ -12,6 +12,9 @@ export interface PushPayload {
   amount: string;
   direction: string;
   event: string;
+  notificationId?: string;
+  actionUrl?: string;
+  type?: string;
 }
 
 /** Pure FCM sender — event consumption lives in EventsConsumerService. */
@@ -50,6 +53,9 @@ export class FcmPushService {
         amount: payload.amount,
         direction: payload.direction,
         event: payload.event,
+        notification_id: payload.notificationId ?? '',
+        action_url: payload.actionUrl ?? '',
+        type: payload.type ?? payload.event,
       },
     });
   }

@@ -3,24 +3,21 @@ import {
   createRedisClient,
   EVENTS,
   RedisStreamsEventConsumer,
-  type BookingConfirmedPayload,
-  type BookingCompletedPayload,
-  type PaymentExpiredPayload,
-  type ReviewCreatedPayload,
   type DomainEvent,
 } from '@nexa/event-bus';
-import { NotificationDispatcherService } from './notification-dispatcher.service';
+import { NotificationOrchestratorService } from './notification-orchestrator.service';
+import { mapDomainEventToNotifications } from './notification-mapper';
 
 /**
  * Consumes domain events (Redis Streams, with retry queue + DLQ from the bus)
- * and routes them to the multi-channel notification dispatcher.
+ * and routes them through the persist-first notification pipeline.
  */
 @Injectable()
 export class EventsConsumerService implements OnModuleInit, OnModuleDestroy {
   private readonly logger = new Logger(EventsConsumerService.name);
   private consumer: RedisStreamsEventConsumer | null = null;
 
-  constructor(private readonly dispatcher: NotificationDispatcherService) {}
+  constructor(private readonly orchestrator: NotificationOrchestratorService) {}
 
   async onModuleInit(): Promise<void> {
     const redis = createRedisClient();
@@ -36,10 +33,12 @@ export class EventsConsumerService implements OnModuleInit, OnModuleDestroy {
     await this.consumer.subscribe(
       [
         EVENTS.BOOKING_CONFIRMED,
-        EVENTS.BOOKING_COMPLETED,
+        EVENTS.BOOKING_CANCELLED,
+        EVENTS.BOOKING_HOST_APPROVED,
         EVENTS.PAYMENT_SUCCEEDED,
-        EVENTS.PAYMENT_EXPIRED,
         EVENTS.REVIEW_CREATED,
+        EVENTS.REVIEW_REMINDER,
+        EVENTS.REVIEW_REPLY,
       ],
       (event) => this.handleDomainEvent(event),
     );
@@ -51,82 +50,12 @@ export class EventsConsumerService implements OnModuleInit, OnModuleDestroy {
   }
 
   async handleDomainEvent(event: DomainEvent): Promise<void> {
-    if (event.type === EVENTS.BOOKING_CONFIRMED) {
-      const p = event.payload as unknown as BookingConfirmedPayload;
-      await this.dispatcher.dispatch({
-        userId: p.hostUserId,
-        title: 'New booking',
-        body: 'A guest booked your listing',
-        reference: p.bookingId,
-        amount: p.amount,
-        direction: 'incoming',
-        event: 'STAYS_BOOKING',
-      });
+    const inputs = mapDomainEventToNotifications(event);
+    if (!inputs.length) {
+      this.logger.debug(`No notification mapping for event ${event.type}`);
       return;
     }
-
-    if (event.type === EVENTS.BOOKING_COMPLETED) {
-      const p = event.payload as unknown as BookingCompletedPayload;
-      await Promise.all([
-        this.dispatcher.dispatch({
-          userId: p.guestUserId,
-          title: 'Stay completed',
-          body: 'Your stay has been completed.',
-          reference: p.bookingId,
-          amount: '',
-          direction: 'info',
-          event: 'STAYS_BOOKING_COMPLETED',
-        }),
-        this.dispatcher.dispatch({
-          userId: p.hostUserId,
-          title: 'Booking completed',
-          body: 'Booking has been completed.',
-          reference: p.bookingId,
-          amount: '',
-          direction: 'info',
-          event: 'STAYS_BOOKING_COMPLETED',
-        }),
-      ]);
-      return;
-    }
-
-    if (event.type === EVENTS.PAYMENT_EXPIRED) {
-      const p = event.payload as unknown as PaymentExpiredPayload;
-      await this.dispatcher.dispatch({
-        userId: p.guestUserId,
-        title: 'Payment expired',
-        body: 'Your pending booking payment has expired.',
-        reference: p.bookingId,
-        amount: '',
-        direction: 'warning',
-        event: 'STAYS_PAYMENT_EXPIRED',
-      });
-      return;
-    }
-
-    if (event.type === EVENTS.REVIEW_CREATED) {
-      const p = event.payload as unknown as ReviewCreatedPayload;
-      await Promise.all([
-        this.dispatcher.dispatch({
-          userId: p.guestUserId,
-          title: 'Thanks for your review',
-          body: 'Thanks for reviewing your stay.',
-          reference: p.reviewId,
-          amount: '',
-          direction: 'info',
-          event: 'STAYS_REVIEW_CREATED',
-        }),
-        this.dispatcher.dispatch({
-          userId: p.hostUserId,
-          title: 'New review',
-          body: 'You received a new review.',
-          reference: p.reviewId,
-          amount: '',
-          direction: 'incoming',
-          event: 'STAYS_REVIEW_CREATED',
-        }),
-      ]);
-    }
+    await this.orchestrator.processMany(inputs);
   }
 }
 

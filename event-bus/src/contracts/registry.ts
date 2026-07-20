@@ -8,6 +8,8 @@ export const EVENTS = {
   BOOKING_CREATED: 'booking.created.v1',
   BOOKING_CONFIRMED: 'booking.confirmed.v1',
   BOOKING_COMPLETED: 'booking.completed.v1',
+  BOOKING_CANCELLED: 'booking.cancelled.v1',
+  BOOKING_HOST_APPROVED: 'booking.host_approved.v1',
   PAYMENT_SUCCEEDED: 'payment.succeeded.v1',
   PAYMENT_EXPIRED: 'payment.expired.v1',
   KYC_UPDATED: 'kyc.updated.v1',
@@ -15,6 +17,8 @@ export const EVENTS = {
   REVIEW_CREATED: 'review.created.v1',
   REVIEW_UPDATED: 'review.updated.v1',
   REVIEW_DELETED: 'review.deleted.v1',
+  REVIEW_REMINDER: 'review.reminder.v1',
+  REVIEW_REPLY: 'review.reply.v1',
 } as const satisfies Record<string, DomainEventType>;
 
 export type RegisteredEventName = (typeof EVENTS)[keyof typeof EVENTS];

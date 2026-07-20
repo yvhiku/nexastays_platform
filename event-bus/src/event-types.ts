@@ -6,6 +6,8 @@ export const DOMAIN_EVENT_TYPES = [
   'booking.created.v1',
   'booking.confirmed.v1',
   'booking.completed.v1',
+  'booking.cancelled.v1',
+  'booking.host_approved.v1',
   'payment.succeeded.v1',
   'payment.expired.v1',
   'kyc.updated.v1',
@@ -13,6 +15,8 @@ export const DOMAIN_EVENT_TYPES = [
   'review.created.v1',
   'review.updated.v1',
   'review.deleted.v1',
+  'review.reminder.v1',
+  'review.reply.v1',
 ] as const;
 
 export type DomainEventType = (typeof DOMAIN_EVENT_TYPES)[number];
@@ -28,7 +32,11 @@ export type LegacyDomainEventType =
   | 'listing.published'
   | 'review.created'
   | 'review.updated'
-  | 'review.deleted';
+  | 'review.deleted'
+  | 'booking.cancelled'
+  | 'booking.host_approved'
+  | 'review.reminder'
+  | 'review.reply';
 
 export interface DomainEvent<T extends Record<string, unknown> = Record<string, unknown>> {
   id: string;
@@ -69,10 +77,40 @@ export interface PaymentExpiredPayload {
 
 export interface PaymentSucceededPayload {
   bookingId: string;
+  guestUserId: string;
   provider: string;
   providerIntentId: string;
   amount: string;
   currency: string;
+}
+
+export interface BookingCancelledPayload {
+  bookingId: string;
+  listingId: string;
+  guestUserId: string;
+  hostUserId: string;
+  cancelledBy: 'guest' | 'host';
+}
+
+export interface BookingHostApprovedPayload {
+  bookingId: string;
+  listingId: string;
+  guestUserId: string;
+  hostUserId: string;
+}
+
+export interface ReviewReminderPayload {
+  bookingId: string;
+  listingId: string;
+  guestUserId: string;
+}
+
+export interface ReviewReplyPayload {
+  reviewId: string;
+  bookingId: string;
+  listingId: string;
+  recipientUserId: string;
+  authorUserId: string;
 }
 
 export interface KycUpdatedPayload {

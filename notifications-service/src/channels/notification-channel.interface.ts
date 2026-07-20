@@ -1,11 +1,14 @@
 export interface NotificationPayload {
   userId: string;
+  notificationId: string;
+  type: string;
   title: string;
   body: string;
   reference: string;
   amount: string;
   direction: string;
   event: string;
+  actionUrl?: string;
   /** Optional channel-specific extras (email address, phone number, …). */
   meta?: Record<string, string>;
 }

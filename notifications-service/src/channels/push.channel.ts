@@ -24,6 +24,9 @@ export class PushChannel implements NotificationChannel {
       amount: notification.amount,
       direction: notification.direction,
       event: notification.event,
+      notificationId: notification.notificationId,
+      actionUrl: notification.actionUrl ?? '',
+      type: notification.type,
     });
   }
 }
