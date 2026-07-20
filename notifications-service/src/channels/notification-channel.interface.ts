@@ -9,6 +9,8 @@ export interface NotificationPayload {
   direction: string;
   event: string;
   actionUrl?: string;
+  /** Rich FCM data passthrough (conversation_id, conversation_version, …). */
+  data?: Record<string, string>;
   /** Optional channel-specific extras (email address, phone number, …). */
   meta?: Record<string, string>;
 }

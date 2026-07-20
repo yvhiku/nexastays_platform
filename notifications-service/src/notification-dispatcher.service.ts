@@ -8,6 +8,7 @@ import type {
   NotificationPayload,
 } from './channels/notification-channel.interface';
 import type { UserNotification } from './entities/user-notification.entity';
+import { toFcmDataFields } from './fcm-data';
 
 /**
  * Multi-channel dispatcher.
@@ -41,6 +42,7 @@ export class NotificationDispatcherService {
         direction: 'info',
         event: row.type,
         actionUrl,
+        data: toFcmDataFields(row.data),
       },
       ['push'],
     );

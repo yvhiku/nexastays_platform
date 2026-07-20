@@ -15,6 +15,8 @@ export interface PushPayload {
   notificationId?: string;
   actionUrl?: string;
   type?: string;
+  /** Rich messaging sync fields forwarded to FCM data payload. */
+  data?: Record<string, string>;
 }
 
 /** Pure FCM sender — event consumption lives in EventsConsumerService. */
@@ -56,6 +58,7 @@ export class FcmPushService {
         notification_id: payload.notificationId ?? '',
         action_url: payload.actionUrl ?? '',
         type: payload.type ?? payload.event,
+        ...(payload.data ?? {}),
       },
     });
   }

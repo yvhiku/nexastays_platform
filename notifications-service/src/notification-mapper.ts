@@ -171,6 +171,8 @@ function messageReceivedNotification(p: MessageReceivedPayload): CreateNotificat
       conversation_version: p.conversationVersion,
       booking_id: p.bookingId ?? undefined,
       preview: p.preview,
+      listing_title: p.listingTitle ?? undefined,
+      sender_name: p.senderName ?? undefined,
     },
   };
 }
