@@ -9,6 +9,7 @@ export const NOTIFICATION_TYPES = [
   'HOST_BOOKING_CANCELLED',
   'GUEST_REVIEW_RECEIVED',
   'REVIEW_REPLY',
+  'MESSAGE_RECEIVED',
 ] as const;
 
 export type NotificationType = (typeof NOTIFICATION_TYPES)[number];

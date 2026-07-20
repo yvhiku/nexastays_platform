@@ -9,6 +9,7 @@ import {
   type ReviewCreatedPayload,
   type ReviewReminderPayload,
   type ReviewReplyPayload,
+  type MessageReceivedPayload,
 } from '@nexa/event-bus';
 
 function bookingActionUrl(bookingId: string): string {
@@ -150,6 +151,30 @@ function reviewReply(p: ReviewReplyPayload): CreateNotificationInput {
   };
 }
 
+function inboxActionUrl(conversationId: string): string {
+  return `/inbox/${conversationId}`;
+}
+
+function messageReceivedNotification(p: MessageReceivedPayload): CreateNotificationInput {
+  const listing = p.listingTitle ? `${p.listingTitle} — ` : '';
+  return {
+    userId: p.recipientUserId,
+    type: 'MESSAGE_RECEIVED',
+    title: p.senderName ?? 'New message',
+    body: `${listing}"${p.preview.slice(0, 80)}${p.preview.length > 80 ? '…' : ''}"`,
+    data: {
+      action_url: inboxActionUrl(p.conversationId),
+      conversation_id: p.conversationId,
+      message_id: p.messageId,
+      last_message_id: p.lastMessageId ?? p.messageId,
+      last_message_sequence: p.lastMessageSequence,
+      conversation_version: p.conversationVersion,
+      booking_id: p.bookingId ?? undefined,
+      preview: p.preview,
+    },
+  };
+}
+
 /** Map domain events to inbox notification inputs. */
 export function mapDomainEventToNotifications(
   event: DomainEvent,
@@ -182,6 +207,10 @@ export function mapDomainEventToNotifications(
     case EVENTS.REVIEW_REPLY: {
       const p = event.payload as unknown as ReviewReplyPayload;
       return [reviewReply(p)];
+    }
+    case EVENTS.MESSAGE_RECEIVED: {
+      const p = event.payload as unknown as MessageReceivedPayload;
+      return [messageReceivedNotification(p)];
     }
     default:
       return [];

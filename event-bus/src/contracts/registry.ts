@@ -19,6 +19,9 @@ export const EVENTS = {
   REVIEW_DELETED: 'review.deleted.v1',
   REVIEW_REMINDER: 'review.reminder.v1',
   REVIEW_REPLY: 'review.reply.v1',
+  MESSAGE_RECEIVED: 'message.received.v1',
+  MESSAGE_SENT: 'message.sent.v1',
+  MESSAGE_READ: 'message.read.v1',
 } as const satisfies Record<string, DomainEventType>;
 
 export type RegisteredEventName = (typeof EVENTS)[keyof typeof EVENTS];

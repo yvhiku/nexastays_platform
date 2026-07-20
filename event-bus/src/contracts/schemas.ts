@@ -131,4 +131,29 @@ export const EVENT_SCHEMAS: Record<DomainEventType, z.ZodType<Record<string, unk
       listingId: nonEmpty,
     })
     .passthrough(),
+
+  'message.received.v1': z
+    .object({
+      messageId: nonEmpty,
+      conversationId: nonEmpty,
+      recipientUserId: nonEmpty,
+      senderUserId: nonEmpty,
+      preview: z.string(),
+    })
+    .passthrough(),
+
+  'message.sent.v1': z
+    .object({
+      messageId: nonEmpty,
+      conversationId: nonEmpty,
+      senderUserId: nonEmpty,
+    })
+    .passthrough(),
+
+  'message.read.v1': z
+    .object({
+      conversationId: nonEmpty,
+      readerUserId: nonEmpty,
+    })
+    .passthrough(),
 };

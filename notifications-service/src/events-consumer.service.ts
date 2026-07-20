@@ -39,6 +39,7 @@ export class EventsConsumerService implements OnModuleInit, OnModuleDestroy {
         EVENTS.REVIEW_CREATED,
         EVENTS.REVIEW_REMINDER,
         EVENTS.REVIEW_REPLY,
+        EVENTS.MESSAGE_RECEIVED,
       ],
       (event) => this.handleDomainEvent(event),
     );
