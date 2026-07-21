@@ -24,7 +24,7 @@ export class HttpFallbackEventPublisher implements EventBusPublisher {
       occurredAt: new Date().toISOString(),
       payload,
     };
-    const url = `${this.baseUrl.replace(/\/$/, '')}/internal/events`;
+    const url = `${this.baseUrl.replace(/\/$/, '')}/api/v1/internal/events`;
     try {
       await retryWithBackoff(
         async () => {
@@ -48,8 +48,20 @@ export class HttpFallbackEventPublisher implements EventBusPublisher {
         },
         { attempts: 2 },
       );
-    } catch {
-      /* non-blocking side effect */
+    } catch (err) {
+      console.error(
+        JSON.stringify({
+          level: 'error',
+          service: 'event-bus',
+          event: 'http_fallback_publish_failed',
+          eventType: event.type,
+          eventId: event.id,
+          url,
+          error: err instanceof Error ? err.message : String(err),
+          ts: new Date().toISOString(),
+        }),
+      );
+      throw err;
     }
     return event;
   }
