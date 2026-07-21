@@ -17,6 +17,7 @@ export const DOMAIN_EVENT_TYPES = [
   'review.deleted.v1',
   'review.reminder.v1',
   'review.reply.v1',
+  'booking.checkout_reminder.v1',
   'message.received.v1',
   'message.sent.v1',
   'message.read.v1',
@@ -40,6 +41,7 @@ export type LegacyDomainEventType =
   | 'booking.host_approved'
   | 'review.reminder'
   | 'review.reply'
+  | 'booking.checkout_reminder'
   | 'message.received'
   | 'message.sent'
   | 'message.read';
@@ -73,6 +75,7 @@ export interface BookingCompletedPayload {
   hostUserId: string;
   guestUserId: string;
   checkoutDate: string;
+  listingTitle?: string;
 }
 
 export interface PaymentExpiredPayload {
@@ -109,6 +112,15 @@ export interface ReviewReminderPayload {
   bookingId: string;
   listingId: string;
   guestUserId: string;
+  listingTitle?: string;
+}
+
+export interface CheckoutReminderPayload {
+  bookingId: string;
+  listingId: string;
+  guestUserId: string;
+  listingTitle?: string;
+  checkoutAt?: string;
 }
 
 export interface ReviewReplyPayload {

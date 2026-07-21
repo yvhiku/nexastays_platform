@@ -19,6 +19,7 @@ export const EVENTS = {
   REVIEW_DELETED: 'review.deleted.v1',
   REVIEW_REMINDER: 'review.reminder.v1',
   REVIEW_REPLY: 'review.reply.v1',
+  CHECKOUT_REMINDER: 'booking.checkout_reminder.v1',
   MESSAGE_RECEIVED: 'message.received.v1',
   MESSAGE_SENT: 'message.sent.v1',
   MESSAGE_READ: 'message.read.v1',

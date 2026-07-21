@@ -58,6 +58,17 @@ export const EVENT_SCHEMAS: Record<DomainEventType, z.ZodType<Record<string, unk
       bookingId: nonEmpty,
       listingId: nonEmpty,
       guestUserId: nonEmpty,
+      listingTitle: z.string().optional(),
+    })
+    .passthrough(),
+
+  'booking.checkout_reminder.v1': z
+    .object({
+      bookingId: nonEmpty,
+      listingId: nonEmpty,
+      guestUserId: nonEmpty,
+      listingTitle: z.string().optional(),
+      checkoutAt: z.string().optional(),
     })
     .passthrough(),
 

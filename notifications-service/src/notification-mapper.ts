@@ -9,6 +9,7 @@ import {
   type ReviewCreatedPayload,
   type ReviewReminderPayload,
   type ReviewReplyPayload,
+  type CheckoutReminderPayload,
   type MessageReceivedPayload,
 } from '@nexa/event-bus';
 
@@ -108,15 +109,34 @@ function guestHostApproved(p: BookingHostApprovedPayload): CreateNotificationInp
 }
 
 function guestReviewReminder(p: ReviewReminderPayload): CreateNotificationInput {
+  const listing = p.listingTitle ? ` at ${p.listingTitle}` : '';
   return {
     userId: p.guestUserId,
     type: 'REVIEW_REMINDER',
     title: 'Review your stay',
-    body: 'Tell us about your stay.',
+    body: `How was your stay${listing}? Tap to leave a review.`,
+    data: {
+      action_url: `${bookingActionUrl(p.bookingId)}/review`,
+      booking_id: p.bookingId,
+      listing_id: p.listingId,
+      listing_title: p.listingTitle,
+    },
+  };
+}
+
+function guestCheckoutReminder(p: CheckoutReminderPayload): CreateNotificationInput {
+  const listing = p.listingTitle ? ` at ${p.listingTitle}` : '';
+  return {
+    userId: p.guestUserId,
+    type: 'CHECKOUT_REMINDER',
+    title: 'Checkout in 1 hour',
+    body: `Your booking${listing} checkout is in 1 hour.`,
     data: {
       action_url: bookingActionUrl(p.bookingId),
       booking_id: p.bookingId,
       listing_id: p.listingId,
+      listing_title: p.listingTitle,
+      checkout_at: p.checkoutAt,
     },
   };
 }
@@ -156,12 +176,20 @@ function inboxActionUrl(conversationId: string): string {
 }
 
 function messageReceivedNotification(p: MessageReceivedPayload): CreateNotificationInput {
-  const listing = p.listingTitle ? `${p.listingTitle} — ` : '';
+  const sender = p.senderName?.trim() || 'Someone';
+  const preview = p.preview.trim();
+  const previewShort =
+    preview.length > 80 ? `${preview.slice(0, 80)}…` : preview;
+  const body = previewShort
+    ? p.listingTitle
+      ? `${p.listingTitle} — "${previewShort}"`
+      : `"${previewShort}"`
+    : 'Tap to open the conversation.';
   return {
     userId: p.recipientUserId,
     type: 'MESSAGE_RECEIVED',
-    title: p.senderName ?? 'New message',
-    body: `${listing}"${p.preview.slice(0, 80)}${p.preview.length > 80 ? '…' : ''}"`,
+    title: `${sender} sent you a message`,
+    body,
     data: {
       action_url: inboxActionUrl(p.conversationId),
       conversation_id: p.conversationId,
@@ -201,6 +229,10 @@ export function mapDomainEventToNotifications(
     case EVENTS.REVIEW_REMINDER: {
       const p = event.payload as unknown as ReviewReminderPayload;
       return [guestReviewReminder(p)];
+    }
+    case EVENTS.CHECKOUT_REMINDER: {
+      const p = event.payload as unknown as CheckoutReminderPayload;
+      return [guestCheckoutReminder(p)];
     }
     case EVENTS.REVIEW_CREATED: {
       const p = event.payload as unknown as ReviewCreatedPayload;

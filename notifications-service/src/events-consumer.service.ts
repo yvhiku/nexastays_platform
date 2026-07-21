@@ -38,6 +38,7 @@ export class EventsConsumerService implements OnModuleInit, OnModuleDestroy {
         EVENTS.PAYMENT_SUCCEEDED,
         EVENTS.REVIEW_CREATED,
         EVENTS.REVIEW_REMINDER,
+        EVENTS.CHECKOUT_REMINDER,
         EVENTS.REVIEW_REPLY,
         EVENTS.MESSAGE_RECEIVED,
       ],

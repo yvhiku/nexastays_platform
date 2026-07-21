@@ -27,7 +27,12 @@ export function createEventBusPublisher(): EventBusPublisher {
     void redis.connect().catch(() => undefined);
     return new ResilientEventPublisher(redis);
   }
-  const notificationsUrl =
-    process.env.NOTIFICATIONS_SERVICE_URL ?? 'http://127.0.0.1:3003';
-  return new HttpFallbackEventPublisher(notificationsUrl);
+  const notificationsUrl = (process.env.NOTIFICATIONS_SERVICE_URL ?? '').trim();
+  if (process.env.NODE_ENV === 'production' && !notificationsUrl) {
+    throw new Error(
+      'REDIS_URL or NOTIFICATIONS_SERVICE_URL is required in production for domain event publishing.',
+    );
+  }
+  const baseUrl = notificationsUrl || 'http://127.0.0.1:3003';
+  return new HttpFallbackEventPublisher(baseUrl);
 }
