@@ -11,6 +11,7 @@ import {
   type ReviewReplyPayload,
   type CheckoutReminderPayload,
   type MessageReceivedPayload,
+  type ConversationArchivedPayload,
 } from '@nexa/event-bus';
 
 function bookingActionUrl(bookingId: string): string {
@@ -110,18 +111,75 @@ function guestHostApproved(p: BookingHostApprovedPayload): CreateNotificationInp
 
 function guestReviewReminder(p: ReviewReminderPayload): CreateNotificationInput {
   const listing = p.listingTitle ? ` at ${p.listingTitle}` : '';
+  const stage = p.reminderStage ?? '1h';
+  const copyByStage: Record<string, { title: string; body: string }> = {
+    '1h': {
+      title: 'Review your stay',
+      body: `Hope you enjoyed your stay${listing}. Share your experience.`,
+    },
+    '24h': {
+      title: 'Review your stay',
+      body: 'Your review helps future travelers.',
+    },
+    '3d': {
+      title: 'Review your stay',
+      body: 'Hosts appreciate feedback. Leave your review.',
+    },
+    '7d': {
+      title: 'Last reminder',
+      body: 'Last reminder — reviews close soon.',
+    },
+  };
+  const copy = copyByStage[stage] ?? copyByStage['1h'];
   return {
     userId: p.guestUserId,
     type: 'REVIEW_REMINDER',
-    title: 'Review your stay',
-    body: `How was your stay${listing}? Tap to leave a review.`,
+    title: copy.title,
+    body: copy.body,
     data: {
       action_url: `${bookingActionUrl(p.bookingId)}/review`,
       booking_id: p.bookingId,
       listing_id: p.listingId,
       listing_title: p.listingTitle,
+      reminder_stage: stage,
     },
   };
+}
+
+function conversationArchivedNotifications(
+  p: ConversationArchivedPayload,
+): CreateNotificationInput[] {
+  const listing = p.listingTitle ? ` for ${p.listingTitle}` : '';
+  const inboxUrl = `/inbox/${p.conversationId}`;
+  const supportUrl = '/contact?safety=1';
+  return [
+    {
+      userId: p.guestUserId,
+      type: 'CONVERSATION_ARCHIVED',
+      title: 'Conversation archived',
+      body: `Need help with this reservation${listing}? Contact Support.`,
+      data: {
+        action_url: supportUrl,
+        booking_id: p.bookingId,
+        listing_id: p.listingId,
+        conversation_id: p.conversationId,
+        inbox_url: inboxUrl,
+      },
+    },
+    {
+      userId: p.hostUserId,
+      type: 'CONVERSATION_ARCHIVED',
+      title: 'Conversation archived',
+      body: `Need help with this reservation${listing}? Contact Support.`,
+      data: {
+        action_url: supportUrl,
+        booking_id: p.bookingId,
+        listing_id: p.listingId,
+        conversation_id: p.conversationId,
+        inbox_url: inboxUrl,
+      },
+    },
+  ];
 }
 
 function guestCheckoutReminder(p: CheckoutReminderPayload): CreateNotificationInput {
@@ -245,6 +303,10 @@ export function mapDomainEventToNotifications(
     case EVENTS.MESSAGE_RECEIVED: {
       const p = event.payload as unknown as MessageReceivedPayload;
       return [messageReceivedNotification(p)];
+    }
+    case EVENTS.CONVERSATION_ARCHIVED: {
+      const p = event.payload as unknown as ConversationArchivedPayload;
+      return conversationArchivedNotifications(p);
     }
     default:
       return [];

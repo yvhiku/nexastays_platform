@@ -41,6 +41,7 @@ export class EventsConsumerService implements OnModuleInit, OnModuleDestroy {
         EVENTS.CHECKOUT_REMINDER,
         EVENTS.REVIEW_REPLY,
         EVENTS.MESSAGE_RECEIVED,
+        EVENTS.CONVERSATION_ARCHIVED,
       ],
       (event) => this.handleDomainEvent(event),
     );

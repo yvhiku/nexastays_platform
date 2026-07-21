@@ -167,4 +167,15 @@ export const EVENT_SCHEMAS: Record<DomainEventType, z.ZodType<Record<string, unk
       readerUserId: nonEmpty,
     })
     .passthrough(),
+
+  'conversation.archived.v1': z
+    .object({
+      bookingId: nonEmpty,
+      listingId: nonEmpty,
+      conversationId: nonEmpty,
+      guestUserId: nonEmpty,
+      hostUserId: nonEmpty,
+      listingTitle: z.string().optional(),
+    })
+    .passthrough(),
 };

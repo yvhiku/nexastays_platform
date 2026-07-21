@@ -23,6 +23,7 @@ export const EVENTS = {
   MESSAGE_RECEIVED: 'message.received.v1',
   MESSAGE_SENT: 'message.sent.v1',
   MESSAGE_READ: 'message.read.v1',
+  CONVERSATION_ARCHIVED: 'conversation.archived.v1',
 } as const satisfies Record<string, DomainEventType>;
 
 export type RegisteredEventName = (typeof EVENTS)[keyof typeof EVENTS];

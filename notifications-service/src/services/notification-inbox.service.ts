@@ -23,12 +23,19 @@ export class NotificationInboxService {
     const bookingId =
       typeof input.data?.booking_id === 'string' ? input.data.booking_id : null;
     if (bookingId && ONCE_PER_BOOKING_TYPES.has(input.type)) {
-      const existing = await this.repo
+      const qb = this.repo
         .createQueryBuilder('n')
         .where('n.user_id = :userId', { userId: input.userId })
         .andWhere('n.type = :type', { type: input.type })
-        .andWhere("n.data->>'booking_id' = :bookingId", { bookingId })
-        .getOne();
+        .andWhere("n.data->>'booking_id' = :bookingId", { bookingId });
+      if (input.type === 'REVIEW_REMINDER') {
+        const stage =
+          typeof input.data?.reminder_stage === 'string'
+            ? input.data.reminder_stage
+            : '1h';
+        qb.andWhere("n.data->>'reminder_stage' = :stage", { stage });
+      }
+      const existing = await qb.getOne();
       if (existing) return existing;
     }
 

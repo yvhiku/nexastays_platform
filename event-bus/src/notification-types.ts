@@ -11,6 +11,7 @@ export const NOTIFICATION_TYPES = [
   'GUEST_REVIEW_RECEIVED',
   'REVIEW_REPLY',
   'MESSAGE_RECEIVED',
+  'CONVERSATION_ARCHIVED',
 ] as const;
 
 export type NotificationType = (typeof NOTIFICATION_TYPES)[number];

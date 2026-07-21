@@ -21,6 +21,7 @@ export const DOMAIN_EVENT_TYPES = [
   'message.received.v1',
   'message.sent.v1',
   'message.read.v1',
+  'conversation.archived.v1',
 ] as const;
 
 export type DomainEventType = (typeof DOMAIN_EVENT_TYPES)[number];
@@ -44,7 +45,8 @@ export type LegacyDomainEventType =
   | 'booking.checkout_reminder'
   | 'message.received'
   | 'message.sent'
-  | 'message.read';
+  | 'message.read'
+  | 'conversation.archived';
 
 export interface DomainEvent<T extends Record<string, unknown> = Record<string, unknown>> {
   id: string;
@@ -112,6 +114,16 @@ export interface ReviewReminderPayload {
   bookingId: string;
   listingId: string;
   guestUserId: string;
+  listingTitle?: string;
+  reminderStage?: '1h' | '24h' | '3d' | '7d';
+}
+
+export interface ConversationArchivedPayload {
+  bookingId: string;
+  listingId: string;
+  conversationId: string;
+  guestUserId: string;
+  hostUserId: string;
   listingTitle?: string;
 }
 
