@@ -27,7 +27,7 @@ describe('notification-mapper MESSAGE_RECEIVED', () => {
     expect(inputs[0]).toMatchObject({
       userId: 'user-1',
       type: 'MESSAGE_RECEIVED',
-      title: 'Host Name',
+      title: 'Host Name sent you a message',
       data: {
         action_url: '/inbox/conv-1',
         conversation_id: 'conv-1',
