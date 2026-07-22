@@ -4,8 +4,8 @@
   "description": "Nexa platform services — run scripts from this folder or cd into each service.",
   "scripts": {
     "install:all": "npm install --prefix event-bus && npm run build --prefix event-bus && npm install --prefix telemetry && npm run build --prefix telemetry && npm install --prefix identity-read-model && npm run build --prefix identity-read-model && npm install --prefix notifications-service && npm install --prefix media-service && npm install --prefix consumers && npm run build --prefix consumers",
-    "start": "npm run start:dev --prefix notifications-service",
-    "start:notifications": "npm run start:dev --prefix notifications-service",
+    "start": "npm run build:event-bus && npm run start:dev --prefix notifications-service",
+    "start:notifications": "npm run build:event-bus && npm run start:dev --prefix notifications-service",
     "start:media": "npm run start:dev --prefix media-service",
     "start:consumers": "npm run start:dev --prefix consumers",
     "build:notifications": "npm run build --prefix notifications-service",
