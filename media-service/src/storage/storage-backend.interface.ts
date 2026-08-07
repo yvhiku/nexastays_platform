@@ -2,6 +2,7 @@ export interface MediaMetadata {
   assetId: string;
   storageKey: string;
   mimeType: string;
+  originalFilename?: string;
   sizeBytes: number;
   ownerService: string;
   ownerUserId?: string;

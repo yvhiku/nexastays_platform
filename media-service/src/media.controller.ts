@@ -16,6 +16,7 @@ import { memoryStorage } from 'multer';
 import type { Response } from 'express';
 import { MediaService } from './media.service';
 import { getInternalServiceKey } from './secrets';
+import { SignedUrlDto, UploadMediaDto } from './media.dto';
 
 function assertInternalKey(key: string | undefined): void {
   if (key !== getInternalServiceKey()) {
@@ -39,7 +40,7 @@ export class MediaController {
     @Headers('x-internal-key') key: string | undefined,
     @UploadedFile() file: Express.Multer.File | undefined,
     @Body()
-    body: { ownerService?: string; ownerUserId?: string; prefix?: string },
+    body: UploadMediaDto,
   ) {
     assertInternalKey(key);
     if (!file) throw new UnauthorizedException('No file provided');
@@ -58,7 +59,7 @@ export class MediaController {
   @HttpCode(200)
   async signedUrl(
     @Headers('x-internal-key') key: string | undefined,
-    @Body() body: { storageKey: string; ttlSeconds?: number },
+    @Body() body: SignedUrlDto,
   ) {
     assertInternalKey(key);
     const metadata = await this.media.getMetadataByKey(body.storageKey);
@@ -82,6 +83,14 @@ export class MediaController {
     this.media.verifySignature(storageKey, Number(exp), sig);
     const { buffer, metadata } = await this.media.getFile(storageKey);
     res.setHeader('Content-Type', metadata.mimeType);
+    res.setHeader('X-Content-Type-Options', 'nosniff');
+    if (!metadata.mimeType.startsWith('image/')) {
+      const name = metadata.originalFilename ?? 'media-download';
+      res.setHeader(
+        'Content-Disposition',
+        `attachment; filename="${name.replace(/["\\\r\n]/g, '_')}"`,
+      );
+    }
     res.setHeader('Content-Length', String(metadata.sizeBytes));
     res.setHeader('Cache-Control', 'private, max-age=300');
     res.send(buffer);

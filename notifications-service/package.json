@@ -11,19 +11,23 @@
     "audit": "npm audit --audit-level=high"
   },
   "dependencies": {
-    "@nestjs/common": "^11.1.18",
-    "@nestjs/core": "^11.1.18",
-    "@nestjs/platform-express": "^11.1.18",
+    "@nestjs/common": "^11.1.28",
+    "@nestjs/core": "^11.1.28",
+    "@nestjs/platform-express": "^11.1.28",
+    "@nestjs/throttler": "^6.5.0",
     "@nestjs/typeorm": "^11.0.3",
     "@nexa/event-bus": "file:../event-bus",
     "@nexa/telemetry": "file:../telemetry",
+    "class-transformer": "^0.5.1",
+    "class-validator": "^0.14.3",
     "dotenv": "^17.3.1",
     "firebase-admin": "^13.7.0",
+    "helmet": "^8.1.0",
     "ioredis": "^5.6.1",
     "pg": "^8.17.1",
     "reflect-metadata": "^0.2.2",
     "rxjs": "^7.8.1",
-    "typeorm": "^0.3.28"
+    "typeorm": "^0.3.31"
   },
   "devDependencies": {
     "@nestjs/cli": "^11.0.0",
@@ -36,10 +40,17 @@
   "overrides": {
     "multer": "2.2.0",
     "uuid": ">=14.0.0",
-    "axios": ">=1.15.0"
+    "axios": ">=1.15.0",
+    "brace-expansion": "5.0.8",
+    "fast-xml-parser": "5.10.1",
+    "fast-uri": "3.1.4"
   },
   "jest": {
-    "moduleFileExtensions": ["js", "json", "ts"],
+    "moduleFileExtensions": [
+      "js",
+      "json",
+      "ts"
+    ],
     "rootDir": "src",
     "testRegex": ".*\\.spec\\.ts$",
     "transform": {

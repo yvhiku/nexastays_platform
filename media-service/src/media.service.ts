@@ -1,21 +1,21 @@
 import { createHmac, randomUUID, timingSafeEqual } from 'crypto';
-import * as path from 'path';
 import { Injectable, NotFoundException, UnauthorizedException } from '@nestjs/common';
 import { LocalStorageBackend } from './storage/local-storage.backend';
 import { S3StorageBackend } from './storage/s3-storage.backend';
 import type { MediaMetadata, StorageBackend } from './storage/storage-backend.interface';
+import { detectSafeMediaType, safeDownloadName } from './media-security';
+import { getMediaSigningSecret, isProductionRuntime } from './secrets';
 
 const META_SUFFIX = '.meta.json';
-
-function signingSecret(): string {
-  return process.env.MEDIA_SIGNING_SECRET ?? 'dev-media-signing-secret';
-}
 
 @Injectable()
 export class MediaService {
   private readonly backend: StorageBackend;
 
   constructor() {
+    if (isProductionRuntime() && process.env.MEDIA_STORAGE_BACKEND !== 's3') {
+      throw new Error('MEDIA_STORAGE_BACKEND=s3 is required in production.');
+    }
     this.backend =
       process.env.MEDIA_STORAGE_BACKEND === 's3'
         ? new S3StorageBackend()
@@ -31,14 +31,15 @@ export class MediaService {
     prefix?: string;
   }): Promise<MediaMetadata & { signedUrl: string }> {
     const assetId = randomUUID();
-    const ext = path.extname(params.filename) || '';
+    const detected = detectSafeMediaType(params.buffer);
     const prefix = (params.prefix ?? params.ownerService).replace(/[^a-zA-Z0-9_/-]/g, '');
-    const storageKey = `${prefix}/${assetId}${ext}`;
+    const storageKey = `${prefix}/${assetId}${detected.extension}`;
 
     const metadata: MediaMetadata = {
       assetId,
       storageKey,
-      mimeType: params.mimeType,
+      mimeType: detected.mime,
+      originalFilename: safeDownloadName(params.filename, detected.extension),
       sizeBytes: params.buffer.length,
       ownerService: params.ownerService,
       ownerUserId: params.ownerUserId,
@@ -73,7 +74,9 @@ export class MediaService {
   signedUrlFor(assetId: string, storageKey: string, ttlSeconds = 900): string {
     const exp = Math.floor(Date.now() / 1000) + ttlSeconds;
     const sig = this.computeSignature(storageKey, exp);
-    const base = process.env.MEDIA_PUBLIC_BASE_URL ?? `http://127.0.0.1:${process.env.PORT ?? 3004}`;
+    const base =
+      process.env.MEDIA_PUBLIC_BASE_URL ??
+      `http://127.0.0.1:${process.env.PORT ?? 3004}`;
     const encodedKey = encodeURIComponent(storageKey);
     return `${base}/api/v1/media/file?key=${encodedKey}&exp=${exp}&sig=${sig}`;
   }
@@ -91,7 +94,7 @@ export class MediaService {
   }
 
   private computeSignature(storageKey: string, exp: number): string {
-    return createHmac('sha256', signingSecret())
+    return createHmac('sha256', getMediaSigningSecret())
       .update(`${storageKey}:${exp}`)
       .digest('hex');
   }

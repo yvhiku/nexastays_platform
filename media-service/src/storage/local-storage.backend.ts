@@ -9,7 +9,10 @@ export class LocalStorageBackend implements StorageBackend {
   private fullPath(storageKey: string): string {
     const resolved = path.resolve(this.rootDir, storageKey);
     const root = path.resolve(this.rootDir);
-    if (!resolved.startsWith(root)) throw new Error('Invalid storage key');
+    const relative = path.relative(root, resolved);
+    if (relative.startsWith('..') || path.isAbsolute(relative)) {
+      throw new Error('Invalid storage key');
+    }
     return resolved;
   }
 

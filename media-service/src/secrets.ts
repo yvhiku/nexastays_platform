@@ -24,3 +24,9 @@ export function getInternalServiceKey(): string {
     devFallback: 'dev-internal-key',
   });
 }
+
+export function getMediaSigningSecret(): string {
+  return requireSecret('MEDIA_SIGNING_SECRET', {
+    devFallback: 'dev-media-signing-secret',
+  });
+}
