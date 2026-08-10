@@ -1,11 +1,20 @@
 {
   "name": "@nexa/telemetry",
-  "version": "0.1.0",
+  "version": "0.2.0",
   "private": true,
   "main": "dist/index.js",
   "types": "dist/index.d.ts",
   "scripts": {
-    "build": "tsc -p tsconfig.json"
+    "build": "tsc -p tsconfig.json",
+    "test": "npm run build && node --test dist/**/*.spec.js 2>nul || node --test dist/request-id.spec.js dist/redact.spec.js dist/alerting.spec.js dist/error-monitoring.spec.js"
+  },
+  "peerDependencies": {
+    "@sentry/node": "^9.0.0 || ^8.0.0"
+  },
+  "peerDependenciesMeta": {
+    "@sentry/node": {
+      "optional": true
+    }
   },
   "devDependencies": {
     "@types/node": "^22.10.7",

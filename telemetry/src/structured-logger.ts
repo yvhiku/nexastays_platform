@@ -1,3 +1,7 @@
+import { sanitizeForTelemetry } from './redact';
+import { getRequestContext } from './request-context';
+import { resolveObsStage } from './error-monitoring';
+
 export type LogLevel = 'debug' | 'info' | 'warn' | 'error';
 
 /**
@@ -8,6 +12,8 @@ export interface NexaLogRecord {
   level: LogLevel;
   service: string;
   event: string;
+  environment?: string;
+  request_id?: string;
   traceId?: string;
   userId?: string;
   latencyMs?: number;
@@ -26,7 +32,8 @@ export interface LogSink {
 
 export class ConsoleJsonSink implements LogSink {
   write(record: NexaLogRecord): void {
-    const line = JSON.stringify(record);
+    const safe = sanitizeForTelemetry(record) as NexaLogRecord;
+    const line = JSON.stringify(safe);
     if (record.level === 'error') console.error(line);
     else if (record.level === 'warn') console.warn(line);
     else console.log(line);
@@ -44,10 +51,18 @@ export class StructuredLogger {
     event: string,
     fields: Omit<Partial<NexaLogRecord>, 'level' | 'service' | 'event' | 'ts'> = {},
   ): void {
+    const ctx = getRequestContext();
     this.sink.write({
       level,
       service: this.service,
       event,
+      environment: resolveObsStage(),
+      request_id:
+        typeof fields.request_id === 'string'
+          ? fields.request_id
+          : ctx.requestId,
+      traceId:
+        typeof fields.traceId === 'string' ? fields.traceId : ctx.traceId,
       ts: new Date().toISOString(),
       ...fields,
     });
