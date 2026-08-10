@@ -51,6 +51,7 @@ export class MediaController {
       ownerService: body.ownerService ?? 'unknown',
       ownerUserId: body.ownerUserId,
       prefix: body.prefix,
+      assetId: body.assetId,
     });
   }
 

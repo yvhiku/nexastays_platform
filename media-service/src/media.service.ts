@@ -4,7 +4,10 @@ import { LocalStorageBackend } from './storage/local-storage.backend';
 import { S3StorageBackend } from './storage/s3-storage.backend';
 import type { MediaMetadata, StorageBackend } from './storage/storage-backend.interface';
 import { detectSafeMediaType, safeDownloadName } from './media-security';
-import { getMediaSigningSecret, isProductionRuntime } from './secrets';
+import {
+  getMediaSigningSecret,
+  isHardProductionRuntime,
+} from './secrets';
 
 const META_SUFFIX = '.meta.json';
 
@@ -13,7 +16,7 @@ export class MediaService {
   private readonly backend: StorageBackend;
 
   constructor() {
-    if (isProductionRuntime() && process.env.MEDIA_STORAGE_BACKEND !== 's3') {
+    if (isHardProductionRuntime() && process.env.MEDIA_STORAGE_BACKEND !== 's3') {
       throw new Error('MEDIA_STORAGE_BACKEND=s3 is required in production.');
     }
     this.backend =
@@ -29,8 +32,9 @@ export class MediaService {
     ownerService: string;
     ownerUserId?: string;
     prefix?: string;
+    assetId?: string;
   }): Promise<MediaMetadata & { signedUrl: string }> {
-    const assetId = randomUUID();
+    const assetId = params.assetId?.trim() || randomUUID();
     const detected = detectSafeMediaType(params.buffer);
     const prefix = (params.prefix ?? params.ownerService).replace(/[^a-zA-Z0-9_/-]/g, '');
     const storageKey = `${prefix}/${assetId}${detected.extension}`;

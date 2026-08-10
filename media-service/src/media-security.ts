@@ -10,7 +10,24 @@ function ascii(buffer: Buffer, start: number, length: number): string {
   return buffer.subarray(start, start + length).toString('ascii');
 }
 
+function isSvgBuffer(buffer: Buffer): boolean {
+  if (!buffer || buffer.length < 5) return false;
+  const head = buffer
+    .subarray(0, Math.min(256, buffer.length))
+    .toString('utf8')
+    .trimStart()
+    .toLowerCase();
+  return (
+    head.startsWith('<svg') ||
+    (head.startsWith('<?xml') && head.includes('<svg'))
+  );
+}
+
 export function detectSafeMediaType(buffer: Buffer): SafeMediaType {
+  // SVG is never accepted — MIME alone is not XSS-safe.
+  if (isSvgBuffer(buffer)) {
+    throw new BadRequestException('SVG uploads are not allowed.');
+  }
   if (buffer.length >= 3 && buffer[0] === 0xff && buffer[1] === 0xd8 && buffer[2] === 0xff) {
     return { mime: 'image/jpeg', extension: '.jpg', inline: true };
   }
