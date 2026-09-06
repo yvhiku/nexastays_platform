@@ -41,6 +41,10 @@ jobs:
         if: matrix.package == 'consumers' || matrix.package == 'identity-read-model'
         working-directory: telemetry
         run: npm ci && npm run build
+      - name: Build identity read model (consumer dependency)
+        if: matrix.package == 'consumers'
+        working-directory: identity-read-model
+        run: npm ci && npm run build
       - name: Install + build package
         working-directory: ${{ matrix.package }}
         run: |
