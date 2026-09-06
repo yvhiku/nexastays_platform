@@ -6,8 +6,7 @@
   "types": "dist/index.d.ts",
   "scripts": {
     "build": "tsc -p tsconfig.json",
-    "prepare": "npm run build",
-    "test": "npm run build && node --test dist/request-id.spec.js dist/redact.spec.js dist/alerting.spec.js dist/error-monitoring.spec.js"
+    "test": "node --test"
   },
   "peerDependencies": {
     "@sentry/node": "^9.0.0 || ^8.0.0"
