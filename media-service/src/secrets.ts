@@ -43,14 +43,11 @@ export function requireSecret(
 ): string {
   const value = (process.env[name] ?? '').trim();
   if (value) return value;
+  // Never soft-open when NODE_ENV or NEXA_ENV is production (incl. dogfood Node builds).
   if (isHardProductionRuntime() || process.env.NODE_ENV === 'production') {
-    // Require when NODE_ENV=production OR NEXA_ENV=production so dogfood still
-    // sets secrets when shipping Node production builds.
-    if (isHardProductionRuntime() || !options?.devFallback) {
-      throw new Error(
-        `${name} is required in production and must be set via environment variables.`,
-      );
-    }
+    throw new Error(
+      `${name} is required in production and must be set via environment variables.`,
+    );
   }
   if (options?.devFallback !== undefined) return options.devFallback;
   throw new Error(`${name} is not set.`);

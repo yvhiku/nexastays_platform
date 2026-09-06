@@ -39,3 +39,6 @@ coverage/
 .DS_Store
 Thumbs.db
 desktop.ini
+
+# Accidental self-symlink (do not commit)
+/nexastays_platform

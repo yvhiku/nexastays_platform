@@ -22,6 +22,8 @@ export interface CreateNotificationInput {
   title: string;
   body: string;
   data?: Record<string, unknown>;
+  /** Domain event id — used for at-least-once inbox/push idempotency. */
+  eventId?: string;
 }
 
 export interface PersistedNotification extends CreateNotificationInput {

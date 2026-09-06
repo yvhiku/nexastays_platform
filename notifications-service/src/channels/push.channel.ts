@@ -13,7 +13,7 @@ export class PushChannel implements NotificationChannel {
   constructor(private readonly fcm: FcmPushService) {}
 
   isEnabled(): boolean {
-    return true; // FCM silently no-ops without credentials
+    return this.fcm.isConfigured();
   }
 
   async send(notification: NotificationPayload): Promise<void> {

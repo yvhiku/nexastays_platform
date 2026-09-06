@@ -60,17 +60,53 @@ export class IdentityReadModel {
    * Get identity snapshot for a user. Cache-first; falls back to the
    * Identity snapshot API (authorized with the caller's bearer token).
    * Returns null if both cache and API are unavailable.
+   *
+   * `userId` must be the JWT `sub`. Shared sentinel keys like `__direct__`
+   * are rejected (no cache write under a shared key).
    */
   async getSnapshot(
     userId: string,
     authorizationHeader: string,
   ): Promise<IdentitySnapshot | null> {
-    const cached = await this.readCache(userId);
-    if (cached) return cached;
+    const uid = (userId ?? '').trim();
+    if (!uid || uid === '__direct__') {
+      console.warn(
+        JSON.stringify({
+          level: 'warn',
+          service: this.serviceName,
+          event: 'identity.snapshot_missing_user_id',
+          ts: new Date().toISOString(),
+        }),
+      );
+      return null;
+    }
+
+    const cached = await this.readCache(uid);
+    if (cached) {
+      if (cached.userId && cached.userId !== uid) {
+        await this.invalidate(uid);
+      } else {
+        return cached;
+      }
+    }
 
     const fresh = await this.fetchFromIdentity(authorizationHeader);
-    if (fresh) await this.writeCache(userId, fresh);
-    return fresh;
+    if (!fresh) return null;
+    if (fresh.userId && fresh.userId !== uid) {
+      console.warn(
+        JSON.stringify({
+          level: 'warn',
+          service: this.serviceName,
+          event: 'identity.snapshot_user_mismatch',
+          expectedUserId: uid,
+          snapshotUserId: fresh.userId,
+          ts: new Date().toISOString(),
+        }),
+      );
+      return null;
+    }
+    await this.writeCache(uid, { ...fresh, userId: fresh.userId || uid });
+    return { ...fresh, userId: fresh.userId || uid };
   }
 
   /** Drop the cached snapshot — call on kyc.updated events. */
@@ -85,7 +121,8 @@ export class IdentityReadModel {
 
   /** Warm/refresh the cache directly (e.g. from an event payload). */
   async prime(userId: string, snapshot: IdentitySnapshot): Promise<void> {
-    await this.writeCache(userId, snapshot);
+    if (snapshot.userId && snapshot.userId !== userId) return;
+    await this.writeCache(userId, { ...snapshot, userId });
   }
 
   private async readCache(userId: string): Promise<IdentitySnapshot | null> {

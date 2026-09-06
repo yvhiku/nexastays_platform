@@ -7,7 +7,9 @@ import { normalizeEventType } from './contracts/registry';
 import { RedisRetryQueue } from './retry-queue/retry-queue';
 
 const STREAM_KEY = 'nexa:events';
-const CONSUMER_GROUP = 'nexa-platform';
+
+/** Default only for legacy single-process use — prefer an explicit per-service group. */
+export const DEFAULT_CONSUMER_GROUP = 'nexa-platform';
 
 export class RedisStreamsEventPublisher implements EventBusPublisher {
   constructor(private readonly redis: Redis) {}
@@ -35,15 +37,26 @@ export class RedisStreamsEventPublisher implements EventBusPublisher {
   }
 }
 
+export type RedisStreamsConsumerOptions = {
+  /** Redis Streams consumer group — must be unique per independent subscriber process. */
+  consumerGroup?: string;
+};
+
 export class RedisStreamsEventConsumer implements EventBusConsumer {
   private running = false;
   private handlers = new Map<DomainEventType, EventHandler[]>();
   private retryQueue: RedisRetryQueue | null = null;
+  private readonly consumerGroup: string;
 
   constructor(
     private readonly redis: Redis,
     private readonly consumerName: string,
-  ) {}
+    options?: RedisStreamsConsumerOptions,
+  ) {
+    this.consumerGroup =
+      (options?.consumerGroup ?? process.env.EVENT_BUS_CONSUMER_GROUP ?? '').trim() ||
+      DEFAULT_CONSUMER_GROUP;
+  }
 
   async subscribe(types: (DomainEventType | string)[], handler: EventHandler): Promise<void> {
     for (const type of types) {
@@ -59,14 +72,14 @@ export class RedisStreamsEventConsumer implements EventBusConsumer {
     if (this.running) return;
     this.running = true;
     try {
-      await this.redis.xgroup('CREATE', STREAM_KEY, CONSUMER_GROUP, '0', 'MKSTREAM');
+      await this.redis.xgroup('CREATE', STREAM_KEY, this.consumerGroup, '0', 'MKSTREAM');
     } catch (err: unknown) {
       const msg = err instanceof Error ? err.message : String(err);
       if (!msg.includes('BUSYGROUP')) throw err;
     }
     this.retryQueue = new RedisRetryQueue(
       this.redis,
-      `${CONSUMER_GROUP}:${this.consumerName}`,
+      `${this.consumerGroup}:${this.consumerName}`,
       (event) => this.dispatch(event),
     );
     this.retryQueue.start();
@@ -91,7 +104,7 @@ export class RedisStreamsEventConsumer implements EventBusConsumer {
       try {
         const rows = (await this.redis.xreadgroup(
           'GROUP',
-          CONSUMER_GROUP,
+          this.consumerGroup,
           this.consumerName,
           'COUNT',
           10,
@@ -112,7 +125,7 @@ export class RedisStreamsEventConsumer implements EventBusConsumer {
             try {
               event = JSON.parse(raw) as DomainEvent;
             } catch {
-              await this.redis.xack(STREAM_KEY, CONSUMER_GROUP, id);
+              await this.redis.xack(STREAM_KEY, this.consumerGroup, id);
               continue; // malformed — ack and drop
             }
             try {
@@ -121,7 +134,7 @@ export class RedisStreamsEventConsumer implements EventBusConsumer {
               // Handler failed — hand off to retry queue with backoff + DLQ.
               await this.retryQueue?.scheduleRetry(event, 1, err);
             }
-            await this.redis.xack(STREAM_KEY, CONSUMER_GROUP, id);
+            await this.redis.xack(STREAM_KEY, this.consumerGroup, id);
           }
         }
       } catch {

@@ -14,7 +14,7 @@ export async function registerAuditConsumer(consumer: EventBusConsumer): Promise
       eventId: event.id,
       source: event.source,
       occurredAt: event.occurredAt,
-      payload: event.payload,
+      payloadKeys: Object.keys(event.payload ?? {}),
     });
   });
 }

@@ -27,6 +27,7 @@ describe('notification-mapper MESSAGE_RECEIVED', () => {
     expect(inputs[0]).toMatchObject({
       userId: 'user-1',
       type: 'MESSAGE_RECEIVED',
+      eventId: 'evt-1',
       title: 'Host Name sent you a message',
       data: {
         action_url: '/inbox/conv-1',
@@ -38,6 +39,7 @@ describe('notification-mapper MESSAGE_RECEIVED', () => {
         listing_title: 'Riad Atlas',
         sender_name: 'Host Name',
         preview: 'See you at check-in',
+        event_id: 'evt-1',
       },
     });
   });

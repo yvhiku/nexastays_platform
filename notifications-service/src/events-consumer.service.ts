@@ -29,6 +29,7 @@ export class EventsConsumerService implements OnModuleInit, OnModuleDestroy {
     this.consumer = new RedisStreamsEventConsumer(
       redis,
       `notifications-${process.pid}`,
+      { consumerGroup: 'nexa-notifications' },
     );
     await this.consumer.subscribe(
       [

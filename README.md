@@ -42,9 +42,11 @@ EVENTS.LISTING_PUBLISHED  // 'listing.published.v1'
 
 ## Reliability
 
-- **Publisher**: Redis outage → events buffered in a bounded in-memory queue, auto-flushed when Redis recovers. Overflow drops are logged.
+- **Consumer groups**: notifications use `nexa-notifications`; platform consumers use `nexa-consumers`. Never share one Redis Streams group across independent subscribers.
+- **Publisher**: Redis outage → events buffered in a bounded in-memory queue, auto-flushed when Redis recovers. Overflow drops are logged. Production requires `REDIS_URL` (HTTP fallback is notifications-only and is refused in prod).
 - **Consumer**: handler failure → per-group Redis retry queue with exponential backoff (2s → 4s → 8s → …, max 5 attempts) → `nexa:events:dlq` dead-letter stream with structured error log.
 - **HTTP calls** (identity snapshot, media, notifications fallback): retry with backoff + circuit breaker (`CircuitBreaker`, `retryWithBackoff` from `@nexa/event-bus`).
+- **Notifications idempotency**: inbox unique on `(user_id, type, event_id)`; redelivery skips push.
 
 ## Identity read model
 
@@ -123,7 +125,7 @@ cd platform ; npm run start:consumers
 
 ### 5. FCM (optional)
 
-Set `FCM_SERVICE_ACCOUNT_JSON` or `FCM_SERVICE_ACCOUNT_PATH` in notifications-service `.env`. Without Firebase credentials, push is skipped silently. Email/SMS channels activate with `EMAIL_PROVIDER` / `SMS_PROVIDER` (stub implementations until a provider is wired).
+Set `FCM_SERVICE_ACCOUNT_JSON` or `FCM_SERVICE_ACCOUNT_PATH` in notifications-service `.env`. In production, FCM credentials are required unless `PUSH_DISABLED=true`. Without Firebase credentials in non-prod, push is skipped. Email/SMS channels activate with `EMAIL_PROVIDER` / `SMS_PROVIDER` (stub implementations until a provider is wired).
 
 ## Media service API
 

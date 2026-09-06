@@ -27,12 +27,15 @@ export function createEventBusPublisher(): EventBusPublisher {
     void redis.connect().catch(() => undefined);
     return new ResilientEventPublisher(redis);
   }
-  const notificationsUrl = (process.env.NOTIFICATIONS_SERVICE_URL ?? '').trim();
-  if (process.env.NODE_ENV === 'production' && !notificationsUrl) {
+  const hardProd =
+    (process.env.NEXA_ENV ?? '').trim().toLowerCase() === 'production' ||
+    process.env.NODE_ENV === 'production';
+  if (hardProd) {
     throw new Error(
-      'REDIS_URL or NOTIFICATIONS_SERVICE_URL is required in production for domain event publishing.',
+      'REDIS_URL is required in production for domain event publishing (HTTP fallback is notifications-only and would drop analytics/audit/identity-cache).',
     );
   }
+  const notificationsUrl = (process.env.NOTIFICATIONS_SERVICE_URL ?? '').trim();
   const baseUrl = notificationsUrl || 'http://127.0.0.1:3003';
   return new HttpFallbackEventPublisher(baseUrl);
 }

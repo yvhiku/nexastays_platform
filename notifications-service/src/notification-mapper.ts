@@ -267,47 +267,59 @@ function messageReceivedNotification(p: MessageReceivedPayload): CreateNotificat
 export function mapDomainEventToNotifications(
   event: DomainEvent,
 ): CreateNotificationInput[] {
+  const withEventId = (input: CreateNotificationInput): CreateNotificationInput => ({
+    ...input,
+    eventId: event.id,
+    data: {
+      ...(input.data ?? {}),
+      event_id: event.id,
+    },
+  });
+
   switch (event.type) {
     case EVENTS.BOOKING_CONFIRMED: {
       const p = event.payload as unknown as BookingConfirmedPayload;
-      return [guestBookingConfirmed(p), hostNewBooking(p)];
+      return [guestBookingConfirmed(p), hostNewBooking(p)].map(withEventId);
     }
     case EVENTS.PAYMENT_SUCCEEDED: {
       const p = event.payload as unknown as PaymentSucceededPayload;
-      return [guestPaymentReceived(p)];
+      return [guestPaymentReceived(p)].map(withEventId);
     }
     case EVENTS.BOOKING_CANCELLED: {
       const p = event.payload as unknown as BookingCancelledPayload;
-      return [guestBookingCancelled(p), hostBookingCancelled(p)];
+      return [guestBookingCancelled(p), hostBookingCancelled(p)].map(withEventId);
     }
     case EVENTS.BOOKING_HOST_APPROVED: {
+      // Mapped for when Stays publishes; no publisher yet — keep for contract readiness.
       const p = event.payload as unknown as BookingHostApprovedPayload;
-      return [guestHostApproved(p)];
+      return [guestHostApproved(p)].map(withEventId);
     }
     case EVENTS.REVIEW_REMINDER: {
       const p = event.payload as unknown as ReviewReminderPayload;
-      return [guestReviewReminder(p)];
+      return [guestReviewReminder(p)].map(withEventId);
     }
     case EVENTS.CHECKOUT_REMINDER: {
       const p = event.payload as unknown as CheckoutReminderPayload;
-      return [guestCheckoutReminder(p)];
+      return [guestCheckoutReminder(p)].map(withEventId);
     }
     case EVENTS.REVIEW_CREATED: {
       const p = event.payload as unknown as ReviewCreatedPayload;
-      return [hostGuestReview(p)];
+      return [hostGuestReview(p)].map(withEventId);
     }
     case EVENTS.REVIEW_REPLY: {
       const p = event.payload as unknown as ReviewReplyPayload;
-      return [reviewReply(p)];
+      return [reviewReply(p)].map(withEventId);
     }
     case EVENTS.MESSAGE_RECEIVED: {
       const p = event.payload as unknown as MessageReceivedPayload;
-      return [messageReceivedNotification(p)];
+      return [messageReceivedNotification(p)].map(withEventId);
     }
     case EVENTS.CONVERSATION_ARCHIVED: {
       const p = event.payload as unknown as ConversationArchivedPayload;
-      return conversationArchivedNotifications(p);
+      return conversationArchivedNotifications(p).map(withEventId);
     }
+    // LISTING_PUBLISHED / KYC_UPDATED: intentionally not mapped — platform
+    // consumers (analytics/audit/identity-cache) own those, not inbox push.
     default:
       return [];
   }

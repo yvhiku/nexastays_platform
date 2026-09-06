@@ -1,4 +1,5 @@
 import {
+  BadRequestException,
   Body,
   Controller,
   Headers,
@@ -6,13 +7,24 @@ import {
   Post,
   UnauthorizedException,
 } from '@nestjs/common';
-import type { DomainEvent } from '@nexa/event-bus';
+import { timingSafeEqual } from 'crypto';
+import {
+  assertValidEvent,
+  EventValidationError,
+  type DomainEvent,
+} from '@nexa/event-bus';
 import { FcmPushService, type PushPayload } from './fcm-push.service';
 import { EventIngressService } from './events-consumer.service';
 import { getInternalServiceKey } from './secrets';
 
 function assertInternalKey(key: string | undefined): void {
-  if (key !== getInternalServiceKey()) {
+  const expected = getInternalServiceKey();
+  if (!key) {
+    throw new UnauthorizedException('Invalid internal service key');
+  }
+  const a = Buffer.from(key);
+  const b = Buffer.from(expected);
+  if (a.length !== b.length || !timingSafeEqual(a, b)) {
     throw new UnauthorizedException('Invalid internal service key');
   }
 }
@@ -31,6 +43,9 @@ export class InternalNotificationsController {
     @Body() body: PushPayload & { userId: string },
   ): Promise<void> {
     assertInternalKey(key);
+    if (!body?.userId?.trim() || !body?.title?.trim() || !body?.body?.trim()) {
+      throw new BadRequestException('userId, title, and body are required');
+    }
     await this.fcm.sendToUser(body.userId, body);
   }
 
@@ -41,6 +56,20 @@ export class InternalNotificationsController {
     @Body() event: DomainEvent,
   ): Promise<void> {
     assertInternalKey(key);
-    await this.ingress.ingest(event);
+    if (!event?.type || !event?.payload || typeof event.payload !== 'object') {
+      throw new BadRequestException('event.type and event.payload are required');
+    }
+    try {
+      const canonical = assertValidEvent(
+        event.type,
+        event.payload as Record<string, unknown>,
+      );
+      await this.ingress.ingest({ ...event, type: canonical });
+    } catch (err) {
+      if (err instanceof EventValidationError) {
+        throw new BadRequestException(err.message);
+      }
+      throw err;
+    }
   }
 }

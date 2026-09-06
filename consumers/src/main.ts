@@ -16,7 +16,9 @@ async function main(): Promise<void> {
   }
   await redis.connect().catch(() => undefined);
 
-  const consumer = new RedisStreamsEventConsumer(redis, `consumers-${process.pid}`);
+  const consumer = new RedisStreamsEventConsumer(redis, `consumers-${process.pid}`, {
+    consumerGroup: 'nexa-consumers',
+  });
 
   await registerAnalyticsConsumer(consumer);
   await registerAuditConsumer(consumer);

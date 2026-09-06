@@ -17,9 +17,16 @@ import type { Response } from 'express';
 import { MediaService } from './media.service';
 import { getInternalServiceKey } from './secrets';
 import { SignedUrlDto, UploadMediaDto } from './media.dto';
+import { timingSafeEqual } from 'crypto';
 
 function assertInternalKey(key: string | undefined): void {
-  if (key !== getInternalServiceKey()) {
+  const expected = getInternalServiceKey();
+  if (!key) {
+    throw new UnauthorizedException('Invalid internal service key');
+  }
+  const a = Buffer.from(key);
+  const b = Buffer.from(expected);
+  if (a.length !== b.length || !timingSafeEqual(a, b)) {
     throw new UnauthorizedException('Invalid internal service key');
   }
 }

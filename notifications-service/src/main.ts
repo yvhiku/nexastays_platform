@@ -19,6 +19,18 @@ async function bootstrap() {
     if (!process.env.REDIS_URL?.trim()) {
       throw new Error('REDIS_URL is required in production.');
     }
+    const pushDisabled = process.env.PUSH_DISABLED === 'true';
+    const hasFcm =
+      Boolean(process.env.FCM_SERVICE_ACCOUNT_JSON?.trim()) ||
+      Boolean(process.env.FCM_SERVICE_ACCOUNT_PATH?.trim());
+    if (!pushDisabled && !hasFcm) {
+      throw new Error(
+        'FCM_SERVICE_ACCOUNT_JSON or FCM_SERVICE_ACCOUNT_PATH is required in production, or set PUSH_DISABLED=true.',
+      );
+    }
+    if (pushDisabled) {
+      console.warn('PUSH_DISABLED=true — FCM push will not be sent');
+    }
   }
   const app = await NestFactory.create<NestExpressApplication>(AppModule);
   if (isProd || process.env.TRUST_PROXY === 'true') {

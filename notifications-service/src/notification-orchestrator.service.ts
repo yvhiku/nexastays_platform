@@ -7,6 +7,7 @@ import type { UserNotification } from './entities/user-notification.entity';
 /**
  * Persist-first notification pipeline: store → push.
  * Never send push without a persisted inbox row.
+ * At-least-once redelivery: skip push when inbox returns an existing row.
  */
 @Injectable()
 export class NotificationOrchestratorService {
@@ -18,7 +19,13 @@ export class NotificationOrchestratorService {
   ) {}
 
   async process(input: CreateNotificationInput): Promise<UserNotification> {
-    const saved = await this.inbox.create(input);
+    const { notification: saved, created } = await this.inbox.create(input);
+    if (!created) {
+      this.logger.debug(
+        `Skip push for existing notification ${saved.id} type=${saved.type}`,
+      );
+      return saved;
+    }
     try {
       await this.dispatcher.dispatchPush(saved);
     } catch (err) {

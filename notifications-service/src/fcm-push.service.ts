@@ -1,4 +1,4 @@
-import { Injectable } from '@nestjs/common';
+import { Injectable, Logger } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import * as admin from 'firebase-admin';
@@ -22,6 +22,8 @@ export interface PushPayload {
 /** Pure FCM sender — event consumption lives in EventsConsumerService. */
 @Injectable()
 export class FcmPushService {
+  private readonly logger = new Logger(FcmPushService.name);
+
   constructor(
     @InjectRepository(PushDeviceToken)
     private readonly tokenRepo: Repository<PushDeviceToken>,
@@ -29,8 +31,13 @@ export class FcmPushService {
     this.initFirebase();
   }
 
+  isConfigured(): boolean {
+    return admin.apps.length > 0;
+  }
+
   private initFirebase(): void {
     if (admin.apps.length > 0) return;
+    if (process.env.PUSH_DISABLED === 'true') return;
     const json = process.env.FCM_SERVICE_ACCOUNT_JSON;
     const path = process.env.FCM_SERVICE_ACCOUNT_PATH;
     if (!json && !path) return;
@@ -47,7 +54,7 @@ export class FcmPushService {
     });
     const tokens = rows.map((r) => r.token).filter(Boolean);
     if (!tokens.length) return;
-    await admin.messaging().sendEachForMulticast({
+    const response = await admin.messaging().sendEachForMulticast({
       tokens,
       notification: { title: payload.title, body: payload.body },
       data: {
@@ -61,6 +68,28 @@ export class FcmPushService {
         ...(payload.data ?? {}),
       },
     });
+
+    const dead: string[] = [];
+    response.responses.forEach((res, i) => {
+      if (res.success) return;
+      const code = res.error?.code ?? '';
+      if (
+        code.includes('registration-token-not-registered') ||
+        code.includes('invalid-registration-token') ||
+        code.includes('invalid-argument')
+      ) {
+        dead.push(tokens[i]);
+      }
+    });
+    if (dead.length) {
+      await this.tokenRepo
+        .createQueryBuilder()
+        .update(PushDeviceToken)
+        .set({ active: false })
+        .where('token IN (:...dead)', { dead })
+        .execute();
+      this.logger.warn(`Deactivated ${dead.length} invalid FCM token(s)`);
+    }
   }
 
   async sendFromNotificationPayload(p: NotificationRequestedPayload): Promise<void> {

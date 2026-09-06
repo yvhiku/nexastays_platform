@@ -15,6 +15,38 @@ jobs:
       - uses: gitleaks/gitleaks-action@v2
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      - name: Reject broken self-symlinks
+        run: |
+          if [ -L nexastays_platform ] || [ -L nexastays_platform/nexastays_platform ]; then
+            echo "Broken self-symlink present" >&2
+            exit 1
+          fi
+
+  packages:
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        package: [event-bus, telemetry, identity-read-model, consumers]
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+      - name: Build event-bus (dependency)
+        if: matrix.package != 'event-bus' && matrix.package != 'telemetry'
+        working-directory: event-bus
+        run: npm ci && npm run build
+      - name: Build telemetry (dependency)
+        if: matrix.package == 'consumers' || matrix.package == 'identity-read-model'
+        working-directory: telemetry
+        run: npm ci && npm run build
+      - name: Install + build package
+        working-directory: ${{ matrix.package }}
+        run: |
+          npm ci
+          npm run build
+          npm test --if-present
 
   services:
     name: ${{ matrix.service }}
@@ -30,8 +62,11 @@ jobs:
           node-version: 20
           cache: npm
           cache-dependency-path: ${{ matrix.service }}/package-lock.json
-      - name: Build event bus
+      - name: Build event-bus
         working-directory: event-bus
+        run: npm ci && npm run build
+      - name: Build telemetry
+        working-directory: telemetry
         run: npm ci && npm run build
       - name: Install service
         working-directory: ${{ matrix.service }}

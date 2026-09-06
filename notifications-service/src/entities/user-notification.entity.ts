@@ -27,6 +27,10 @@ export class UserNotification {
   @Column({ type: 'jsonb', default: {} })
   data: Record<string, unknown>;
 
+  /** Domain event id for at-least-once idempotency (nullable for legacy rows). */
+  @Column({ type: 'uuid', name: 'event_id', nullable: true })
+  event_id: string | null;
+
   @Column({ type: 'boolean', name: 'is_read', default: false })
   is_read: boolean;
 
