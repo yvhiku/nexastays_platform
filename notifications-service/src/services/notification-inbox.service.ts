@@ -37,7 +37,9 @@ export class NotificationInboxService {
         .where('n.user_id = :userId', { userId: input.userId })
         .andWhere('n.type = :type', { type: input.type })
         .andWhere(
-          `(n.event_id = :eventId OR n.data->>'event_id' = :eventId)`,
+          // event_id column is uuid; jsonb ->> yields text — cast both sides to text
+          // so Postgres never attempts `text = uuid`.
+          `(n.event_id::text = :eventId OR n.data->>'event_id' = :eventId)`,
           { eventId },
         )
         .getOne();
