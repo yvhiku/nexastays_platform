@@ -44,3 +44,69 @@ describe('notification-mapper MESSAGE_RECEIVED', () => {
     });
   });
 });
+
+describe('notification-mapper booking/payment events (audit 067-069)', () => {
+  const bookingPayload = {
+    bookingId: 'booking-9',
+    listingId: 'listing-9',
+    guestUserId: 'guest-9',
+    hostUserId: 'host-9',
+  };
+
+  it('maps BOOKING_CONFIRMED to guest + host notifications', () => {
+    const inputs = mapDomainEventToNotifications({
+      id: 'evt-bc',
+      source: 'stays',
+      type: EVENTS.BOOKING_CONFIRMED,
+      payload: bookingPayload,
+      occurredAt: new Date().toISOString(),
+    });
+    expect(inputs).toHaveLength(2);
+    expect(inputs.map((i) => i.type).sort()).toEqual([
+      'BOOKING_CONFIRMED',
+      'HOST_NEW_BOOKING',
+    ]);
+    expect(inputs.find((i) => i.type === 'BOOKING_CONFIRMED')?.userId).toBe(
+      'guest-9',
+    );
+    expect(inputs.find((i) => i.type === 'HOST_NEW_BOOKING')?.userId).toBe(
+      'host-9',
+    );
+  });
+
+  it('maps PAYMENT_SUCCEEDED to guest payment notification', () => {
+    const inputs = mapDomainEventToNotifications({
+      id: 'evt-pay',
+      source: 'stays',
+      type: EVENTS.PAYMENT_SUCCEEDED,
+      payload: {
+        bookingId: 'booking-9',
+        guestUserId: 'guest-9',
+        amount: 100,
+        currency: 'MAD',
+      },
+      occurredAt: new Date().toISOString(),
+    });
+    expect(inputs).toHaveLength(1);
+    expect(inputs[0]).toMatchObject({
+      userId: 'guest-9',
+      type: 'PAYMENT_RECEIVED',
+      eventId: 'evt-pay',
+    });
+  });
+
+  it('maps BOOKING_CANCELLED to guest + host notifications', () => {
+    const inputs = mapDomainEventToNotifications({
+      id: 'evt-cancel',
+      source: 'stays',
+      type: EVENTS.BOOKING_CANCELLED,
+      payload: { ...bookingPayload, cancelledBy: 'guest' },
+      occurredAt: new Date().toISOString(),
+    });
+    expect(inputs).toHaveLength(2);
+    expect(inputs.map((i) => i.type).sort()).toEqual([
+      'BOOKING_CANCELLED',
+      'HOST_BOOKING_CANCELLED',
+    ]);
+  });
+});
